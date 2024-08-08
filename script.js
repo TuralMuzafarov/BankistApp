@@ -69,6 +69,14 @@ const inputLoanAmount = document.querySelector(".form__input--loan-amount");
 const inputCloseUsername = document.querySelector(".form__input--user");
 const inputClosePin = document.querySelector(".form__input--pin");
 
+const formatCurrency = function (value, locale, currency){
+  const options = {
+    style: 'currency',
+    currency: `${currency}`
+  }
+  return new Intl.NumberFormat(locale, options).format(value);
+}
+
 const formatMovementDate = function (date) {
   const calcDaysPassed = (date1, date2) =>
     Math.round(
@@ -81,10 +89,11 @@ const formatMovementDate = function (date) {
   if (daysPassed === 1) return "Yestarday";
   if (daysPassed <= 7) return `${daysPassed} days ago`;
   else {
-    const day = `${date.getDate()}`.padStart(2, 0);
-    const month = `${date.getMonth() + 1}`.padStart(2, 0);
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    // const day = `${date.getDate()}`.padStart(2, 0);
+    // const month = `${date.getMonth() + 1}`.padStart(2, 0);
+    // const year = date.getFullYear();
+    // return `${day}/${month}/${year}`;
+    return new Intl.DateTimeFormat(currentAccount.locale).format(date);
   }
 };
 
@@ -102,13 +111,15 @@ const displayMovements = function (acc, sort = false) {
     const displayDate = formatMovementDate(date);
     console.log(displayDate);
 
+    const formattedMovement = formatCurrency(movement.toFixed(2), acc.locale, acc.currency);
+
     const html = `
           <div class="movements__row">
             <div class="movements__type movements__type--${movementType}">${
       index + 1
     } ${movementType}</div>
             <div class="movements__date">${displayDate}</div>
-            <div class="movements__value">${movement.toFixed(2)}</div>
+            <div class="movements__value">${formattedMovement}</div>
           </div>
     `;
     containerMovements.insertAdjacentHTML("afterbegin", html);
@@ -130,10 +141,11 @@ createUsername(accounts);
 const calcDisplayBalance = function (acc) {
   const movements = acc.movements;
   acc.balance = movements.reduce((acc, cur) => acc + cur, 0);
-  labelBalance.textContent = `${acc.balance.toFixed(2)} EUR`;
+  labelBalance.textContent = formatCurrency(acc.balance.toFixed(2), acc.locale, acc.currency);
 };
 
-const calcDisplaySummary = function (movements) {
+const calcDisplaySummary = function (acc) {
+  const movements = acc.movements;
   const inBalance = movements
     .filter((mov) => mov > 0)
     .reduce((acc, cur) => acc + cur, 0)
@@ -150,16 +162,15 @@ const calcDisplaySummary = function (movements) {
     .reduce((acc, cur) => acc + cur, 0)
     .toFixed(2);
 
-  labelSumIn.textContent = `${inBalance}`;
-  labelSumOut.textContent = `${outBalance}`;
-  labelSumInterest.textContent = `${interest} EUR`;
+  labelSumIn.textContent = formatCurrency(inBalance, acc.locale, acc.currency);
+  labelSumOut.textContent = formatCurrency(outBalance, acc.locale, acc.currency);
+  labelSumInterest.textContent = formatCurrency(interest, acc.locale, acc.currency);
 };
 
 const updateUI = function (account) {
   displayMovements(account);
   calcDisplayBalance(account);
-  calcDisplaySummary(account.movements);
-  // setLogoutTimeOut();
+  calcDisplaySummary(account);
 };
 
 const setLogoutTimeOut = function (){
@@ -184,10 +195,6 @@ const setLogoutTimeOut = function (){
 let timer;
 let currentAccount;
 
-const clearTimer = function (){
-  if(timer) clearInterval(timer);
-  timer = setLogoutTimeOut();
-};
 
 btnLogin.addEventListener("click", function (e) {
   e.preventDefault();
@@ -208,7 +215,16 @@ btnLogin.addEventListener("click", function (e) {
     inputLoginUsername.value = inputLoginPin.value = "";
     inputLoginPin.blur();
 
-    clearTimer();
+    const now = new Date();
+    const options = {
+      hour: 'numeric',
+      minute: 'numeric',
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric',
+    };
+
+    labelDate.textContent = new Intl.DateTimeFormat(currentAccount.locale, options).format(now);
 
     updateUI(currentAccount);
   }
@@ -284,3 +300,5 @@ btnSort.addEventListener("click", function (e) {
   sortState = !sortState;
   clearTimer();
 });
+
+
