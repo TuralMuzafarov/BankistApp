@@ -159,9 +159,35 @@ const updateUI = function (account) {
   displayMovements(account);
   calcDisplayBalance(account);
   calcDisplaySummary(account.movements);
+  // setLogoutTimeOut();
 };
 
+const setLogoutTimeOut = function (){
+  let time = 300;
+  const tick = function() {
+    const min = String(Math.trunc(time/60)).padStart(2, 0);
+    const sec = String(time % 60).padStart(2, 0);
+    labelTimer.textContent = `${min}:${sec}`;
+
+    if(time === 0){
+      containerApp.style.opacity = 0;
+      labelWelcome.textContent = 'Log in to get started'
+      clearInterval(timer);
+    }
+    time--; 
+  };
+  tick();
+  const timer = setInterval( tick, 1000);
+  return timer
+}
+
+let timer;
 let currentAccount;
+
+const clearTimer = function (){
+  if(timer) clearInterval(timer);
+  timer = setLogoutTimeOut();
+};
 
 btnLogin.addEventListener("click", function (e) {
   e.preventDefault();
@@ -181,6 +207,8 @@ btnLogin.addEventListener("click", function (e) {
     // Clear Input Fields
     inputLoginUsername.value = inputLoginPin.value = "";
     inputLoginPin.blur();
+
+    clearTimer();
 
     updateUI(currentAccount);
   }
@@ -207,6 +235,7 @@ btnTransfer.addEventListener("click", function (e) {
     recieverAcc.movementsDates.push(new Date().toISOString());
 
     // UPDATE UI
+    clearTimer();
     updateUI(currentAccount);
   }
 });
@@ -225,6 +254,7 @@ btnClose.addEventListener("click", function (e) {
 
     containerApp.style.opacity = 0;
   }
+  clearTimer();
   inputClosePin.value = inputCloseUsername.value = "";
 });
 
@@ -237,10 +267,13 @@ btnLoan.addEventListener("click", function (e) {
     amount > 0 &&
     currentAccount?.movements.some((mov) => mov >= amount * 0.1)
   ) {
-    currentAccount.movements.push(amount);
-    currentAccount.movementsDates.push(new Date().toISOString());
-    updateUI(currentAccount);
+    setTimeout(function () {
+      currentAccount.movements.push(amount);
+      currentAccount.movementsDates.push(new Date().toISOString());
+      updateUI(currentAccount);
+    }, 2500);
   }
+  clearTimer();
   inputLoanAmount.value = "";
 });
 
@@ -249,4 +282,5 @@ btnSort.addEventListener("click", function (e) {
   e.preventDefault();
   displayMovements(currentAccount, !sortState);
   sortState = !sortState;
+  clearTimer();
 });
